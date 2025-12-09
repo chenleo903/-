@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using CrmSystem.Api.Data;
 using CrmSystem.Api.Helpers;
+using CrmSystem.Api.Services;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -56,10 +57,38 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     });
 
+// Register MigrationService
+builder.Services.AddScoped<MigrationService>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// Handle database migrations
+var autoMigrate = builder.Configuration.GetValue<bool>("Migration:AutoMigrate", false);
+
+if (autoMigrate)
+{
+    Log.Information("AUTO_MIGRATE is enabled. Attempting to apply database migrations...");
+    
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var migrationService = scope.ServiceProvider.GetRequiredService<MigrationService>();
+        await migrationService.MigrateAsync();
+    }
+    catch (Exception ex)
+    {
+        Log.Fatal(ex, "Failed to apply database migrations. Application will not start.");
+        return; // Prevent application startup
+    }
+}
+else
+{
+    Log.Information("AUTO_MIGRATE is disabled. Skipping automatic database migrations.");
+    Log.Information("To apply migrations manually, run: dotnet ef database update");
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
