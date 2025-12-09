@@ -1,13 +1,14 @@
 {
   "enabled": true,
-  "name": "Auto Git Commit After Task Completion",
-  "description": "Automatically commits and pushes code changes to GitHub after agent completes a task",
+  "name": "自动Git提交",
+  "description": "当agent完成任务后，自动将所有更改提交到GitHub仓库，并生成有意义的commit信息",
   "version": "1",
   "when": {
-    "type": "agentComplete"
+    "type": "fileEdited",
+    "patterns": []
   },
   "then": {
-    "type": "runCommand",
-    "command": "git add -A && git commit -m \"Task completed: $(date '+%Y-%m-%d %H:%M:%S')\" && git push origin main"
+    "type": "askAgent",
+    "prompt": "git add -A && git commit -m \"Auto-commit: Agent task completed at $(date '+%Y-%m-%d %H:%M:%S')\" && git push"
   }
 }

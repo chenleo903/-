@@ -255,7 +255,7 @@
   - 配置健康检查
   - _需求：8.1, 8.6, 8.7_
 
-- [ ] 13. 初始化前端项目
+- [x] 13. 初始化前端项目
   - 创建 Vite + React + TypeScript 项目
   - 安装依赖（Ant Design, React Query, React Router, Axios, React Hook Form, Zod）
   - 配置项目结构（pages, components, api, types, hooks）
