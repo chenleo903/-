@@ -1,6 +1,8 @@
 using System.Text.Json.Serialization;
 using CrmSystem.Api.Data;
 using CrmSystem.Api.Helpers;
+using CrmSystem.Api.Middleware;
+using CrmSystem.Api.Repositories;
 using CrmSystem.Api.Services;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -16,6 +18,10 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 builder.Host.UseSerilog();
+
+// Log startup information
+Log.Information("Starting CRM System API");
+Log.Information("Environment: {Environment}", builder.Environment.EnvironmentName);
 
 // Configure Database
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
@@ -39,6 +45,13 @@ builder.Services.AddDbContext<CrmDbContext>(options =>
     }
 });
 
+// Configure CORS
+builder.Services.AddCrmCors(builder.Configuration);
+
+// Configure Authentication (optional)
+builder.Services.AddCrmAuthentication(builder.Configuration, out var authSettings);
+Log.Information("Authentication enabled: {EnableAuth}", authSettings.EnableAuth);
+
 // Configure JSON serialization options
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -57,7 +70,15 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     });
 
-// Register MigrationService
+// Register Repositories
+builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+builder.Services.AddScoped<IInteractionRepository, InteractionRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+// Register Services
+builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<IInteractionService, InteractionService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<MigrationService>();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -90,7 +111,15 @@ else
     Log.Information("To apply migrations manually, run: dotnet ef database update");
 }
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
+
+// Exception handling middleware (should be first to catch all exceptions)
+app.UseExceptionHandling();
+
+// Request logging middleware
+app.UseRequestLogging();
+
+// Swagger (development only)
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -99,13 +128,16 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
+// CORS middleware
+app.UseCrmCors();
+
+// Authentication middleware (only if enabled)
+app.UseCrmAuthentication(authSettings);
 
 app.MapControllers();
 
 try
 {
-    Log.Information("Starting CRM System API");
     app.Run();
 }
 catch (Exception ex)
