@@ -69,24 +69,24 @@
   - 验证字段长度、格式、范围、枚举值
   - _需求：1.7, 3.7, 4.5, 4.6, 4.7, 4.8, 4.9_
 
-- [ ] 6. 实现 Repository 层
-- [ ] 6.1 创建 ICustomerRepository 和 CustomerRepository
+- [x] 6. 实现 Repository 层
+- [x] 6.1 创建 ICustomerRepository 和 CustomerRepository
   - 实现基本 CRUD 操作
   - 实现搜索和筛选方法（使用 EF.Functions.ILike）
   - 实现分页查询
   - _需求：1.1, 1.2, 1.3, 1.4, 2.1-2.9_
 
-- [ ] 6.2 创建 IInteractionRepository 和 InteractionRepository
+- [x] 6.2 创建 IInteractionRepository 和 InteractionRepository
   - 实现基本 CRUD 操作
   - 实现按客户查询互动记录
   - _需求：3.1, 3.3, 3.4, 3.5_
 
-- [ ] 6.3 创建 IUserRepository 和 UserRepository（可选）
+- [x] 6.3 创建 IUserRepository 和 UserRepository（可选）
   - 实现用户查询和创建
   - _需求：5.1, 5.2_
 
-- [ ] 7. 实现 Service 层
-- [ ] 7.1 实现 CustomerService
+- [x] 7. 实现 Service 层
+- [x] 7.1 实现 CustomerService
   - 实现创建客户（含唯一性验证）
   - 实现查询客户详情
   - 实现更新客户（含并发控制）
@@ -110,7 +110,7 @@
   - **属性 20：唯一性约束强制性**
   - **验证：需求 4.1**
 
-- [ ] 7.6 实现 InteractionService
+- [x] 7.6 实现 InteractionService
   - 实现创建互动记录（含事务更新 LastInteractionAt）
   - 实现查询互动记录列表
   - 实现更新互动记录（含并发控制）
@@ -129,7 +129,7 @@
   - **属性 3：软删除不变性**
   - **验证：需求 1.5**
 
-- [ ] 7.10 实现 AuthService（可选）
+- [x] 7.10 实现 AuthService（可选）
   - 实现登录验证
   - 实现 JWT 令牌生成
   - 实现密码哈希验证

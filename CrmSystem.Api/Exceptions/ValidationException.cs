@@ -1,0 +1,21 @@
+namespace CrmSystem.Api.Exceptions;
+
+/// <summary>
+/// 验证异常
+/// </summary>
+public class ValidationException : Exception
+{
+    public Dictionary<string, string> Errors { get; }
+
+    public ValidationException(Dictionary<string, string> errors)
+        : base("Validation failed")
+    {
+        Errors = errors;
+    }
+
+    public ValidationException(string field, string message)
+        : base("Validation failed")
+    {
+        Errors = new Dictionary<string, string> { { field, message } };
+    }
+}
