@@ -86,6 +86,13 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// Log non-sensitive configuration information at startup (Requirement 7.8)
+Log.Information("Configuration Summary:");
+Log.Information("  - Database: {DatabaseHost}", GetDatabaseHost(connectionString));
+Log.Information("  - CORS Origins: {Origins}", string.Join(", ", builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>()));
+Log.Information("  - Auto Migrate: {AutoMigrate}", builder.Configuration.GetValue<bool>("Migration:AutoMigrate", false));
+Log.Information("  - JWT Expiry: {JwtExpiry} minutes", authSettings.JwtExpiryMinutes);
+
 // Handle database migrations
 var autoMigrate = builder.Configuration.GetValue<bool>("Migration:AutoMigrate", false);
 
@@ -109,6 +116,35 @@ else
 {
     Log.Information("AUTO_MIGRATE is disabled. Skipping automatic database migrations.");
     Log.Information("To apply migrations manually, run: dotnet ef database update");
+}
+
+// Create initial admin user if authentication is enabled (Requirements 5.1-5.3)
+if (authSettings.EnableAuth)
+{
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
+        
+        var hasUsers = await authService.HasAnyUserAsync();
+        if (!hasUsers)
+        {
+            Log.Information("No users found in database. Creating initial admin user...");
+            await authService.CreateInitialAdminAsync(
+                authSettings.AdminUsername!,
+                authSettings.AdminPassword!);
+            Log.Information("Initial admin user '{Username}' created successfully", authSettings.AdminUsername);
+        }
+        else
+        {
+            Log.Information("Users already exist in database. Skipping initial admin creation.");
+        }
+    }
+    catch (Exception ex)
+    {
+        Log.Fatal(ex, "Failed to create initial admin user. Application will not start.");
+        return; // Prevent application startup (Requirement 5.3)
+    }
 }
 
 // Configure the HTTP request pipeline
@@ -138,6 +174,7 @@ app.MapControllers();
 
 try
 {
+    Log.Information("CRM System API started successfully at {StartTime}", DateTimeOffset.UtcNow);
     app.Run();
 }
 catch (Exception ex)
@@ -147,4 +184,33 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
+}
+
+/// <summary>
+/// Extracts the database host from connection string without exposing sensitive information
+/// </summary>
+static string GetDatabaseHost(string connectionString)
+{
+    try
+    {
+        var parts = connectionString.Split(';')
+            .Select(p => p.Trim())
+            .Where(p => p.StartsWith("Host=", StringComparison.OrdinalIgnoreCase) ||
+                       p.StartsWith("Server=", StringComparison.OrdinalIgnoreCase))
+            .FirstOrDefault();
+        
+        if (parts != null)
+        {
+            var value = parts.Split('=', 2);
+            if (value.Length == 2)
+            {
+                return value[1];
+            }
+        }
+        return "[unknown]";
+    }
+    catch
+    {
+        return "[unknown]";
+    }
 }
