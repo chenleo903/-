@@ -42,28 +42,28 @@
   - 验证生成的迁移脚本
   - _需求：8.2_
 
-- [ ] 4. 实现数据库迁移锁机制
+- [x] 4. 实现数据库迁移锁机制
   - 创建 MigrationService 类
   - 实现 PostgreSQL advisory lock 逻辑
   - 配置超时和错误处理
   - 在 Program.cs 中集成迁移服务
   - _需求：8.2, 8.3, 8.4, 8.5_
 
-- [ ] 5. 实现 DTO 和验证
-- [ ] 5.1 创建请求 DTO
+- [x] 5. 实现 DTO 和验证
+- [x] 5.1 创建请求 DTO
   - 实现 CreateCustomerRequest 和 UpdateCustomerRequest
   - 实现 CreateInteractionRequest 和 UpdateInteractionRequest
   - 实现 CustomerSearchRequest
   - _需求：1.1, 1.3, 2.1, 3.1, 3.4_
 
-- [ ] 5.2 创建响应 DTO
+- [x] 5.2 创建响应 DTO
   - 实现 CustomerResponse
   - 实现 InteractionResponse
   - 实现 PagedResponse<T>
   - 实现 ApiResponse<T> 和 ErrorDetail
   - _需求：6.1, 6.2, 6.5_
 
-- [ ] 5.3 实现 FluentValidation 验证器
+- [x] 5.3 实现 FluentValidation 验证器
   - 创建 CreateCustomerRequestValidator
   - 创建 CreateInteractionRequestValidator
   - 验证字段长度、格式、范围、枚举值
