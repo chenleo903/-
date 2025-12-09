@@ -1,86 +1,181 @@
-CRM v1 可落地设计
+# CRM System
 
-目标：自用简洁 CRM；快速录入客户、跟踪沟通时间线；可 Docker 化一键启动；后续易扩展 AI/导入导出。
+一个简洁的自用 CRM（客户关系管理）系统，采用前后端分离架构。
 
-范围（MVP）：客户 CRUD + 筛选搜索；客户详情 + 时间线 CRUD；单用户登录或跳过；基础健康检查与日志。
+## 技术栈
 
-技术栈：
+### 后端
+- **框架**: ASP.NET Core 8 Web API
+- **数据库**: PostgreSQL 16
+- **ORM**: Entity Framework Core 8
+- **验证**: FluentValidation
+- **日志**: Serilog
+- **认证**: JWT Bearer (可选)
+- **密码哈希**: BCrypt.Net
+- **测试**: xUnit, FsCheck (属性测试), Testcontainers
 
-后端：C# / ASP.NET Core 8 Web API，EF Core + Npgsql，FluentValidation，Serilog。
-前端：React + TS + Vite，AntD（或 MUI），React Query，React Router。
-DB：PostgreSQL；容器化：Docker + docker-compose（api/web/db）。
-领域模型（受控枚举放配置/常量）：
+### 前端
+- **框架**: React 18 + TypeScript
+- **构建工具**: Vite
+- **UI 库**: Ant Design
+- **状态管理**: React Query
+- **路由**: React Router
+- **HTTP 客户端**: Axios
+- **表单**: React Hook Form + Zod
 
-Customer：Id (UUID)，CompanyName*，ContactName*，Wechat，Phone，Email，Industry，Source，Status（Lead/Contacted/NeedsAnalyzed/Quoted/Negotiating/Won/Lost），Tags (text[])，Score (int, 0-100)，LastInteractionAt，CreatedAt，UpdatedAt，IsDeleted。
-Interaction：Id，CustomerId，HappenedAt*，Channel（Phone/Wechat/Email/Offline/Other），Stage（同 Status 或细分），Title*，Summary，RawContent，NextAction，Attachments (json/urls，可选)，CreatedAt，UpdatedAt。
-User（可选）：Id，UserName，PasswordHash，Role，CreatedAt，UpdatedAt，LastLoginAt。
-API 设计（REST，返回统一 {success,data,errors}）：
+## 项目结构
 
-GET /api/customers?page&pageSize&status&industry&source&keyword → 列表（按 LastInteractionAt desc 默认）。
-GET /api/customers/{id} → 详情（含基本信息+LastInteractionAt）。
-POST /api/customers → 创建（校验必填）。
-PUT /api/customers/{id} → 更新。
-DELETE /api/customers/{id} → 软删。
-GET /api/customers/{id}/interactions → 时间线，按 HappenedAt desc。
-POST /api/customers/{id}/interactions → 新增记录。
-PUT /api/interactions/{id} → 更新（乐观并发，用 If-Match/rowversion 或 UpdatedAt 比对）。
-DELETE /api/interactions/{id} → 删除。
-可选鉴权：POST /api/auth/login 返回 JWT；其他接口需 Bearer。
-数据库要点（EF Migration 管理）：
+```
+CrmSystem/
+├── CrmSystem.Api/              # 后端 API 项目
+│   ├── Controllers/            # API 控制器
+│   ├── Services/               # 业务逻辑层
+│   ├── Repositories/           # 数据访问层
+│   ├── Models/                 # 实体模型
+│   ├── DTOs/                   # 数据传输对象
+│   ├── Middleware/             # 中间件
+│   ├── Data/                   # DbContext 和数据库配置
+│   ├── Exceptions/             # 自定义异常
+│   ├── Helpers/                # 工具类
+│   └── Program.cs              # 应用入口
+├── CrmSystem.Tests/            # 测试项目
+│   ├── UnitTests/              # 单元测试
+│   ├── PropertyTests/          # 属性测试 (FsCheck)
+│   ├── IntegrationTests/       # 集成测试
+│   └── Generators/             # FsCheck 生成器
+├── .kiro/specs/crm-system/     # 规范文档
+│   ├── requirements.md         # 需求文档
+│   ├── design.md               # 设计文档
+│   └── tasks.md                # 任务列表
+└── README.md                   # 项目说明
+```
 
-唯一：CompanyName + ContactName（或单 CompanyName）UNIQUE，用户名 UNIQUE。
-索引：customers(status, industry, source)，customers(last_interaction_at)，interactions(customer_id, happened_at)。
-软删：IsDeleted + 查询过滤。
-时间统一 UTC，前端展示转换。
-架构/分层（后端）：
+## 前置要求
 
-Controllers（薄） → Services（业务） → Repositories/DbContext。
-DTO 与 Entity 分离；AutoMapper 可选。
-中间件：异常处理、请求日志、CORS、认证授权。
-配置：环境变量注入连接串/JWT 密钥；不要写死。
-前端信息架构：
+- .NET 8 SDK
+- PostgreSQL 16
+- Docker & Docker Compose (用于容器化部署)
+- Node.js 18+ (用于前端开发)
 
-路由：/login（可选），/customers，/customers/new，/customers/:id，/customers/:id/edit。
-列表：表格 + 筛选（状态/行业/来源）+ 搜索；行点击进详情；空态/加载/错误态。
-详情：左侧信息卡（编辑按钮），右侧时间线；时间线节点显示时间、Stage/Channel、Title、Summary；支持新增/编辑/删除弹窗表单。
-状态管理：React Query（缓存/失效策略），乐观更新或提交后失效；URL query 保持筛选状态。
-非功能：
+## 快速开始
 
-安全：PBKDF2/BCrypt/Argon2，JWT 过期 + 刷新（可后续）；CORS 白名单；简单限流（AspNetCoreRateLimit）。
-观察性：Serilog 结构化日志，健康检查 /health。
-运维：docker-compose 一键拉起；api 启动前自动执行 dotnet ef database update。
-备份：Postgres volume + 定期 dump（后续脚本化）。
-docker-compose 草案（示意）：
+### 本地开发
 
-version: '3.9'
-services:
-  db:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: crm_user
-      POSTGRES_PASSWORD: crm_pass
-      POSTGRES_DB: crm_db
-    volumes: [crm_db_data:/var/lib/postgresql/data]
-    ports: ["5432:5432"]
-  api:
-    build: ./src/Api
-    environment:
-      ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__Default: Host=db;Port=5432;Database=crm_db;Username=crm_user;Password=crm_pass
-    depends_on: [db]
-    ports: ["5000:8080"]
-  web:
-    build: ./frontend
-    depends_on: [api]
-    ports: ["3000:80"]
-volumes:
-  crm_db_data:
-开发流程建议：
-初始化后端解决方案 + EF 模型 + 首次迁移；跑通 docker-compose（api+db）。
-起前端 Vite + AntD，完成列表/详情/时间线骨架；接通 API。
-加鉴权（如需要）；完善日志/健康检查；打通自动迁移。
-补导入导出/附件/AI 扩展（后续）。
+1. **克隆仓库**
+   ```bash
+   git clone <repository-url>
+   cd CrmSystem
+   ```
 
+2. **配置数据库连接**
+   
+   编辑 `CrmSystem.Api/appsettings.json`:
+   ```json
+   {
+     "ConnectionStrings": {
+       "DefaultConnection": "Host=localhost;Port=5432;Database=crm;Username=postgres;Password=your_password"
+     }
+   }
+   ```
 
+3. **运行数据库迁移**
+   ```bash
+   cd CrmSystem.Api
+   dotnet ef database update
+   ```
 
+4. **启动后端 API**
+   ```bash
+   dotnet run
+   ```
+   
+   API 将在 `https://localhost:5001` 运行
 
+5. **运行测试**
+   ```bash
+   cd ../CrmSystem.Tests
+   dotnet test
+   ```
+
+### Docker 部署
+
+使用 Docker Compose 一键启动完整系统：
+
+```bash
+docker-compose up -d
+```
+
+服务将在以下端口运行：
+- 后端 API: `http://localhost:5000`
+- 前端 Web: `http://localhost:3000`
+- PostgreSQL: `localhost:5432`
+
+## 环境变量
+
+### 后端 API
+
+| 变量名 | 说明 | 默认值 | 必填 |
+|--------|------|--------|------|
+| `ConnectionStrings__DefaultConnection` | PostgreSQL 连接字符串 | - | 是 |
+| `ENABLE_AUTH` | 是否启用 JWT 认证 | `false` | 否 |
+| `ADMIN_USERNAME` | 初始管理员用户名 | - | 启用认证时必填 |
+| `ADMIN_PASSWORD` | 初始管理员密码 | - | 启用认证时必填 |
+| `JWT_SECRET` | JWT 签名密钥 | - | 启用认证时必填 |
+| `JWT_EXPIRY_MINUTES` | JWT 令牌过期时间（分钟） | `60` | 否 |
+| `AUTO_MIGRATE` | 启动时自动执行数据库迁移 | `false` | 否 |
+
+## 核心功能
+
+- ✅ 客户信息管理（CRUD）
+- ✅ 客户列表查询、筛选、搜索
+- ✅ 互动记录管理（时间线）
+- ✅ 软删除支持
+- ✅ 乐观并发控制（ETag）
+- ✅ 统一 API 响应格式
+- ✅ 全局异常处理
+- ✅ 结构化日志（敏感信息脱敏）
+- ✅ 健康检查端点
+- ✅ JWT 认证（可选）
+- ✅ Docker 化部署
+
+## API 文档
+
+启动应用后访问 Swagger UI：
+- 开发环境: `https://localhost:5001/swagger`
+- Docker 环境: `http://localhost:5000/swagger`
+
+## 测试
+
+项目包含三种类型的测试：
+
+1. **单元测试**: 测试独立的业务逻辑
+2. **属性测试**: 使用 FsCheck 验证正确性属性
+3. **集成测试**: 使用 Testcontainers 测试完整流程
+
+运行所有测试：
+```bash
+dotnet test
+```
+
+运行特定类型的测试：
+```bash
+# 仅运行单元测试
+dotnet test --filter Category=Unit
+
+# 仅运行属性测试
+dotnet test --filter Category=Property
+
+# 仅运行集成测试
+dotnet test --filter Category=Integration
+```
+
+## 开发指南
+
+详细的开发指南请参考：
+- [需求文档](.kiro/specs/crm-system/requirements.md)
+- [设计文档](.kiro/specs/crm-system/design.md)
+- [任务列表](.kiro/specs/crm-system/tasks.md)
+
+## 许可证
+
+MIT

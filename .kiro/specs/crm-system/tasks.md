@@ -1,12 +1,12 @@
 # 实现计划
 
-- [ ] 1. 初始化后端项目结构
+- [x] 1. 初始化后端项目结构
   - 创建 ASP.NET Core 8 Web API 项目
   - 配置项目依赖（EF Core, Npgsql, FluentValidation, Serilog, BCrypt.Net, FsCheck, xUnit）
   - 设置项目结构（Controllers, Services, Repositories, Models, DTOs, Middleware）
   - _需求：所有需求_
 
-- [ ] 2. 配置数据库和 EF Core
+- [x] 2. 配置数据库和 EF Core
   - 配置 PostgreSQL 连接字符串
   - 创建 CrmDbContext
   - 配置 DateTimeOffset 自动 UTC 转换
