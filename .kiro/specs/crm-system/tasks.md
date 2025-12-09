@@ -13,31 +13,31 @@
   - 配置 JSON 序列化选项（ISO 8601 格式）
   - _需求：4.2, 4.3, 10.2_
 
-- [ ] 3. 实现核心实体模型
-- [ ] 3.1 创建 Customer 实体
+- [x] 3. 实现核心实体模型
+- [x] 3.1 创建 Customer 实体
   - 实现 Customer 类（包含所有字段和导航属性）
   - 配置 EF Core 映射（字段长度、索引、唯一约束、并发令牌）
   - 配置部分唯一索引（is_deleted = false）
   - _需求：1.1, 4.1, 4.8, 9.1, 9.2, 10.1_
 
-- [ ] 3.2 创建 Interaction 实体
+- [x] 3.2 创建 Interaction 实体
   - 实现 Interaction 类和 AttachmentInfo 类
   - 配置 EF Core 映射（字段长度、外键、索引、并发令牌）
   - 配置 JSONB 存储 Attachments
   - _需求：3.1, 9.3, 10.1_
 
-- [ ] 3.3 创建 User 实体（可选）
+- [x] 3.3 创建 User 实体（可选）
   - 实现 User 类
   - 配置 EF Core 映射（唯一约束）
   - _需求：5.1, 5.2_
 
-- [ ] 3.4 创建枚举类型
+- [x] 3.4 创建枚举类型
   - 实现 CustomerStatus 枚举
   - 实现 CustomerSource 枚举
   - 实现 InteractionChannel 枚举
   - _需求：4.6, 4.7_
 
-- [ ] 3.5 生成初始数据库迁移
+- [x] 3.5 生成初始数据库迁移
   - 运行 `dotnet ef migrations add InitialCreate`
   - 验证生成的迁移脚本
   - _需求：8.2_
